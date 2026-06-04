@@ -1,0 +1,49 @@
+# =========================================
+# Node.js & Next.js
+# =========================================
+node_modules/
+.next/
+out/
+build/
+dist/
+coverage/
+.standalone/
+# package-lock.json # Uncomment ONLY if you are using yarn or pnpm instead of npm
+
+# =========================================
+# Python & FastAPI Engine
+# =========================================
+zephyrus_telemetry/
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+playwright-report/
+
+# =========================================
+# Environment Variables & Secrets
+# =========================================
+.env
+.env.*
+!.env.example
+
+# =========================================
+# System, OS & Logs
+# =========================================
+.DS_Store
+Thumbs.db
+*.log
+
+# =========================================
+# Docker & Deployment
+# =========================================
+docker-compose.override.yml
+
+# =========================================
+# ⚠️ DANGER ZONE (Do not uncomment these) ⚠️
+# =========================================
+backend/tests/
+backend/diagnostic.py
+misc/

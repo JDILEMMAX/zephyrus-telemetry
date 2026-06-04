@@ -1,0 +1,6 @@
+{
+  "name": "Zephyrus Telemetry Command Center",
+  "description": "Enterprise-grade weather telemetry command center demonstrating Universal Port architecture with Hot-Swappable Edge and Python backends.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
