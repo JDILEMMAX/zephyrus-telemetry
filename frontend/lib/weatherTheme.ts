@@ -35,10 +35,16 @@ export function getWeatherTheme(condition: string): WeatherTheme {
   if (norm.includes('wind')) {
     return { accentColor: 'teal', accentTextClass: 'text-teal-400', isStormy: false, conditionKey: 'windy' };
   }
+  if (norm.includes('partly') && norm.includes('night')) {
+    return { accentColor: 'violet', accentTextClass: 'text-violet-400', isStormy: false, conditionKey: 'partly_cloudy_night' };
+  }
+  if (norm.includes('cloud') && norm.includes('night') || norm.includes('overcast') && norm.includes('night')) {
+    return { accentColor: 'violet', accentTextClass: 'text-violet-400', isStormy: false, conditionKey: 'cloudy_night' };
+  }
   if (norm.includes('partly')) {
     return { accentColor: 'yellow', accentTextClass: 'text-yellow-400', isStormy: false, conditionKey: 'partly_cloudy' };
   }
-  if (norm.includes('cloud')) {
+  if (norm.includes('cloud') || norm.includes('overcast')) {
     return { accentColor: 'slate', accentTextClass: 'text-slate-400', isStormy: false, conditionKey: 'cloudy' };
   }
   if (norm.includes('clear') || norm.includes('night')) {

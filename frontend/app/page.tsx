@@ -2,11 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  CloudRain, Wind, Droplets, Thermometer, 
-  Activity, Server, Zap, Globe, RefreshCcw, Sun, Database, Shield, X, BarChart3, ChevronRight, XOctagon,
-  RotateCw, Radio, Terminal
-} from 'lucide-react';
+import { Wind, CloudLightning, Sun, Cloud, Search, Droplets, Activity, Radio, Shield, Thermometer, Moon, Server, Zap, Globe, RefreshCcw, Database, X, BarChart3, ChevronRight, XOctagon, RotateCw, Terminal } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
 } from 'recharts';
@@ -91,17 +87,21 @@ export default function Page() {
     humidity: number;
     windSpeed: number;
     location: string;
-    pressure: number;
-    radiation: string;
+    feelsLike: number;
+    uvIndex: number | string;
+    isDay: boolean;
   }>({
-    temperature: 23,
-    condition: "Rainy Day",
-    humidity: 82,
-    windSpeed: 24,
-    location: "New York, USA",
-    pressure: 1012,
-    radiation: "4 (Mod)"
+    temperature: 0,
+    condition: "Offline",
+    humidity: 0,
+    windSpeed: 0,
+    location: "Offline",
+    feelsLike: 0,
+    uvIndex: "None",
+    isDay: true
   });
+
+  const [forecastData, setForecastData] = useState<any[]>(MOCK_HISTORICAL_DATA);
 
   const [usageData, setUsageData] = useState({ quotaUsed: 1204, quotaTotal: 5000 });
   const [latency, setLatency] = useState(12);
@@ -121,22 +121,28 @@ export default function Page() {
     const start = performance.now();
     try {
       const baseUrl = backendMode === 'FASTAPI' ? (process.env.NEXT_PUBLIC_FASTAPI_URL || 'http://localhost:8000') : '';
-      const [weatherRes, usageRes] = await Promise.all([
+      const [weatherRes, usageRes, forecastRes] = await Promise.all([
         fetch(`${baseUrl}/api/weather/current?location=${encodeURIComponent(targetLocation)}`),
-        fetch(`${baseUrl}/api/usage`)
+        fetch(`${baseUrl}/api/usage`),
+        fetch(`${baseUrl}/api/weather/forecast?location=${encodeURIComponent(targetLocation)}`)
       ]);
       const wData = await weatherRes.json();
       const uData = await usageRes.json();
+      const fData = await forecastRes.json();
       setWeatherData({
-         temperature: wData.temperature ?? 23,
-         condition: wData.condition || "Rainy Day",
-         humidity: wData.humidity ?? 82,
-         windSpeed: wData.windSpeed ?? 24,
+         temperature: wData.temperature ?? 0,
+         condition: wData.condition || "Offline",
+         humidity: wData.humidity ?? 0,
+         windSpeed: wData.windSpeed ?? 0,
          location: wData.location || targetLocation,
-         pressure: wData.pressure ?? 1012,
-         radiation: wData.radiation || "4 (Mod)"
+         feelsLike: wData.feelsLike ?? 0,
+         uvIndex: wData.uvIndex ?? "None",
+         isDay: wData.isDay ?? true
       });
-      setUsageData({ quotaUsed: uData.quotaUsed || 1204, quotaTotal: uData.quotaTotal || 5000 });
+      setUsageData({ quotaUsed: uData.quotaUsed ?? 1204, quotaTotal: uData.quotaTotal ?? 5000 });
+      if (fData.days && fData.days.length > 0) {
+        setForecastData(fData.days);
+      }
       setConnectionStatus('STABLE');
       addLog(`[RES] 200 OK (${Math.round(performance.now() - start)}ms)`);
     } catch (err) {
@@ -194,57 +200,6 @@ export default function Page() {
     };
   }, [isUsingFallback, backendMode]);
 
-
-  // =========================================================================
-  // WEATHER CONDITIONS PREVIEW SIMULATOR (Every 5 seconds)
-  // Comment out this useEffect block below when you are done previewing!
-  // =========================================================================
-  /*
-  useEffect(() => {
-    const conditions = [
-      { condition: 'Sunny', temp: 28 },
-      { condition: 'Clear (Night)', temp: 18 },
-      { condition: 'Partly Cloudy', temp: 22 },
-      { condition: 'Cloudy', temp: 18 },
-      { condition: 'Mist', temp: 15 },
-      { condition: 'Drizzle', temp: 16 },
-      { condition: 'Rainy Day', temp: 15 },
-      { condition: 'Heavy Rain', temp: 13 },
-      { condition: 'Thunderstorm', temp: 12 },
-      { condition: 'Hail', temp: 3 },
-      { condition: 'Snow', temp: -2 },
-      { condition: 'Blizzard', temp: -8 },
-      { condition: 'Tornado', temp: 24 },
-      { condition: 'Windy', temp: 14 }
-    ];
-    let index = 0;
-    const interval = setInterval(() => {
-      index = (index + 1) % conditions.length;
-      setWeatherData(prev => ({
-        ...prev,
-        condition: conditions[index].condition,
-        temperature: conditions[index].temp
-      }));
-    }, 5000);
-    return () => clearInterval(interval);
-  }, []);
-  */
-  // =========================================================================
-
-  // SSE Webhook Simulator
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (connectionStatus === 'STABLE') {
-      interval = setInterval(() => {
-        if (Math.random() > 0.6) {
-          const shift = (Math.random() * 2 - 1).toFixed(1);
-          addLog(`[SSE] Pressure Shift: ${shift} hPa`);
-        }
-      }, 4000);
-    }
-    return () => clearInterval(interval);
-  }, [connectionStatus]);
-
   // EKG FAB Animation
   useEffect(() => {
     const timer = setTimeout(() => setIsFabAnimating(false), 2000);
@@ -271,6 +226,7 @@ export default function Page() {
   const isClear = glassPhysics === 'CLEAR';
   const weatherTheme = getWeatherTheme(weatherData.condition);
   const isStormy = weatherTheme.isStormy;
+  const isNight = !weatherData.isDay;
   
   const accentColor = weatherTheme.accentColor;
   const accentTextClass = weatherTheme.accentTextClass;
@@ -411,8 +367,8 @@ export default function Page() {
               {[
                 { label: "Humidity", icon: Droplets, val: `${weatherData.humidity}%` },
                 { label: "Wind Velocity", icon: Wind, val: `${weatherData.windSpeed} km/h` },
-                { label: "Radiation Index", icon: Sun, val: weatherData.radiation },
-                { label: "Core Pressure", icon: Activity, val: `${weatherData.pressure} hPa` }
+                { label: "Feels Like", icon: Thermometer, val: `${weatherData.feelsLike}°` },
+                { label: "UV Index", icon: Sun, val: weatherData.uvIndex }
               ].map((stat, i) => (
                 <GlassPanel clearMode={isClear} isLight={isLight} isStormy={isStormy} key={i} className="flex flex-col justify-center p-6 lg:p-8 transition-transform hover:-translate-y-1 group min-h-[140px] lg:min-h-[192px]">
                   <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-6 transition-colors duration-500 ${isLight ? 'bg-black/5 group-hover:bg-black/10' : 'bg-white/5 group-hover:bg-white/10 border border-white/5'}`}>
@@ -430,8 +386,8 @@ export default function Page() {
             <GlassPanel clearMode={isClear} isLight={isLight} isStormy={isStormy} className="p-8 flex flex-col h-full">
               <div className="flex items-center justify-between mb-8 pb-6 border-b border-white/10 dark:border-white/5">
                 <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg ${isLight ? 'bg-black/5' : 'bg-white/10'}`}>
-                    <Radio className="w-5 h-5 text-indigo-400" />
+                  <div className={`p-2 rounded-xl bg-${accentColor}-500/20`}>
+                    <Radio className={`w-5 h-5 text-${accentColor}-400`} />
                   </div>
                   <h3 className={`font-mono text-xs tracking-[0.2em] uppercase ${isLight ? 'text-slate-800' : 'text-slate-300'}`}>Target Radar</h3>
                 </div>
@@ -475,13 +431,16 @@ export default function Page() {
                   </div>
                 </div>
 
-                <div className={`p-6 rounded-3xl border flex items-start gap-4 ${isLight ? 'bg-indigo-50/50 border-indigo-100/50' : 'bg-indigo-900/10 border-indigo-500/20'}`}>
-                  <div className="p-2 bg-indigo-500/20 rounded-xl">
-                    <Shield className="w-5 h-5 text-indigo-400" />
+                <div className={`p-6 rounded-3xl border flex items-start gap-4 transition-all duration-700 backdrop-blur-md shadow-lg ${isLight ? `bg-${accentColor}-50/50 border-${accentColor}-200/50 hover:shadow-xl` : `bg-${accentColor}-950/40 border-${accentColor}-500/30 hover:border-${accentColor}-400/50 hover:bg-${accentColor}-900/30`}`}>
+                  <div className={`p-3 bg-${accentColor}-500/20 rounded-2xl shadow-inner flex items-center justify-center`}>
+                    <Shield className={`w-6 h-6 text-${accentColor}-400`} />
                   </div>
-                  <div>
-                    <h4 className={`text-sm font-bold mb-1 ${isLight ? 'text-indigo-900' : 'text-indigo-100'}`}>Edge Route: /v1/weather-geo</h4>
-                    <p className={`text-[10px] font-mono opacity-70 ${isLight ? 'text-indigo-700' : 'text-indigo-300'}`}>TTL: 10m / Latency: {latency}ms / Local</p>
+                  <div className="flex flex-col justify-center">
+                    <h4 className={`text-sm font-bold mb-1 ${isLight ? `text-${accentColor}-900` : `text-${accentColor}-100`}`}>Edge Route Active</h4>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className={`w-1.5 h-1.5 rounded-full bg-${accentColor}-400 animate-pulse`} />
+                      <p className={`text-[10px] font-mono uppercase tracking-widest ${isLight ? `text-${accentColor}-700` : `text-${accentColor}-300`}`}>TTL: 10m / Ping: {latency}ms</p>
+                    </div>
                   </div>
                 </div>
 
@@ -546,7 +505,7 @@ export default function Page() {
                 <div className="p-4 sm:p-10 flex-1 min-h-[300px] h-full flex flex-col relative w-full">
                   <div className="absolute inset-4 sm:inset-10 flex justify-center items-center">
                     <ResponsiveContainer width="100%" height="100%">
-                       <AreaChart data={MOCK_HISTORICAL_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                       <AreaChart data={forecastData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                          <defs>
                            <linearGradient id="colorTempModal" x1="0" y1="0" x2="0" y2="1">
                              <stop offset="5%" stopColor={isStormy ? '#38bdf8' : '#f59e0b'} stopOpacity={0.4}/>

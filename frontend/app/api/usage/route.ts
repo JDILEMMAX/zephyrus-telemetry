@@ -11,16 +11,19 @@ export async function GET() {
 
     if (res.status === 401) return NextResponse.json({ error: "Unauthorized access" }, { status: 401 });
     if (res.status === 429) return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
-    if (!res.ok) throw new Error(`Weather API usage error: ${res.status}`);
+    if (!res.ok) {
+      console.warn(`Weather API usage error: ${res.status}`);
+      return NextResponse.json({ quotaUsed: 0, quotaTotal: 0, rateLimitStatus: "Offline" });
+    }
 
     const data = await res.json();
     return NextResponse.json({
-      quotaUsed: data.quotaUsed ?? 0,
-      quotaTotal: data.quotaTotal ?? 5000,
+      quotaUsed: data?.period?.requestCount ?? 0,
+      quotaTotal: data?.limits?.requests ?? 5000,
       rateLimitStatus: "Aggressive Edge Deduplication Active in Next.js BFF"
     });
   } catch (err) {
     console.error("Live usage fetch error:", err);
-    return NextResponse.json({ error: "Internal server error fetching live usage" }, { status: 500 });
+    return NextResponse.json({ quotaUsed: 0, quotaTotal: 0, rateLimitStatus: "Offline" });
   }
 }

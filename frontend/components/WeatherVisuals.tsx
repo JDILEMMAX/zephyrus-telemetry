@@ -4,7 +4,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   CloudRain, Sun, Moon, CloudFog, CloudLightning, 
-  CloudSnow, CloudDrizzle, Tornado, Wind, CloudSun, Cloud, Snowflake
+  CloudSnow, CloudDrizzle, Tornado, Wind, CloudSun, Cloud, Snowflake, CloudMoon
 } from 'lucide-react';
 import { getWeatherTheme } from '../lib/weatherTheme';
 
@@ -91,6 +91,8 @@ function renderLucideIcon(key: string, className: string) {
     case 'windy': return <Wind className={className} strokeWidth={1} />;
     case 'cloudy': return <Cloud className={className} strokeWidth={1} />;
     case 'partly_cloudy': return <CloudSun className={className} strokeWidth={1} />;
+    case 'partly_cloudy_night': return <CloudMoon className={className} strokeWidth={1} />;
+    case 'cloudy_night': return <CloudMoon className={className} strokeWidth={1} />;
     case 'clear_night': return <Moon className={className} strokeWidth={1} />;
     case 'clear_day':
     default: return <Sun className={className} strokeWidth={1} />;
@@ -152,11 +154,20 @@ function renderBackgroundPaths(key: string) {
       );
     case 'cloudy':
     case 'partly_cloudy':
+    case 'cloudy_night':
+    case 'partly_cloudy_night':
       return (
         <motion.g key="cloudy_group" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 1 }} stroke="currentColor" strokeWidth="0.8" strokeLinecap="round" strokeLinejoin="round">
           {key === 'partly_cloudy' && (
             <motion.g animate={{ rotate: 10 }} transition={{ duration: 4, repeat: Infinity, repeatType: 'reverse', ease: 'easeInOut' }} style={{ transformOrigin: '12px 12px' }}>
               <circle cx="16" cy="8" r="3" />
+            </motion.g>
+          )}
+          {key === 'partly_cloudy_night' && (
+            <motion.g animate={{ rotate: 10 }} transition={{ duration: 4, repeat: Infinity, repeatType: 'reverse', ease: 'easeInOut' }} style={{ transformOrigin: '16px 8px' }}>
+              <g transform="translate(8, 2) scale(0.6)">
+                <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+              </g>
             </motion.g>
           )}
           <motion.path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242" animate={{ x: [-2, 2, -2] }} transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }} />

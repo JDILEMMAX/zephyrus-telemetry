@@ -79,6 +79,7 @@ flowchart LR
 * **Aggressive Edge Caching**: Implements Time-To-Live (TTL) deduplication ensuring 10,000 concurrent user requests result in exactly 1 external API execution.
 * **Live Telemetry & Diagnostics**: Real-time connection via Server-Sent Events (SSE) displaying rate limits, cache hits and quota health.
 * **Dynamic Atmospheric Aesthetics**: Frosty blue glassmorphism with true refractive physics. Features reactive kinetic background weather vectors tailored to the active telemetry payload.
+* **Advanced Geolocation**: Enter specific coordinates manually (e.g., `40.71, -74.00`) directly into the Command Center UI search bar to bypass Nominatim lookups and stream local telemetry directly.
 
 ## Setup Instructions
 
@@ -141,7 +142,11 @@ For power users, Zephyrus can be monitored headlessly via the terminal:
 
 **1. Trigger Weather Payload Extraction:**
 ```bash
-curl -X GET http://localhost:3000/api/weather/current
+# Query by City Name
+curl -X GET "http://localhost:3000/api/weather/current?location=Seattle,%20USA"
+
+# Or query by precise Latitude and Longitude
+curl -X GET "http://localhost:3000/api/weather/current?location=40.71,-74.00"
 ```
 
 **2. Query Live API Quota & Usage:**
