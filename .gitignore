@@ -42,7 +42,7 @@ Thumbs.db
 docker-compose.override.yml
 
 # =========================================
-# ⚠️ DANGER ZONE (Do not uncomment these) ⚠️
+# ⚠️ CAUTION (Uncomment if necessary) ⚠️
 # =========================================
 backend/tests/
 backend/diagnostic.py

@@ -2,12 +2,14 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Wind, CloudLightning, Sun, Cloud, Search, Droplets, Activity, Radio, Shield, Thermometer, Moon, Server, Zap, Globe, RefreshCcw, Database, X, BarChart3, ChevronRight, XOctagon, RotateCw, Terminal } from 'lucide-react';
-import { 
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
+import { Wind, CloudLightning, Sun, Cloud, Search, Droplets, Activity, Radio, Shield, Thermometer, Moon, Server, Zap, Globe, RefreshCcw, Database, X, BarChart3, ChevronRight, XOctagon, RotateCw, Terminal, Settings2 } from 'lucide-react';
+import {
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
 import { getWeatherTheme } from '../lib/weatherTheme';
 import { BackgroundWeatherGraphic, ClippedWeatherIcon, HeaderWeatherIcon } from '../components/WeatherVisuals';
+// DEVELOPMENT UTILITY: Uncomment below to import the environmental cycle simulator
+// import { useWeatherSimulator } from '../hooks/useWeatherSimulator';
 
 /*
  * ARCHITECTURAL NOTES:
@@ -24,13 +26,13 @@ import { BackgroundWeatherGraphic, ClippedWeatherIcon, HeaderWeatherIcon } from 
  *    from the command center to capture volatile atmospheric anomalies instantly.
  */
 
-const GlassPanel = ({ 
-  children, clearMode = false, isLight = false, isStormy = true, className = "" 
-}: { 
-  children: React.ReactNode; clearMode?: boolean; isLight?: boolean; isStormy?: boolean; className?: string 
+const GlassPanel = ({
+  children, clearMode = false, isLight = false, isStormy = true, className = ""
+}: {
+  children: React.ReactNode; clearMode?: boolean; isLight?: boolean; isStormy?: boolean; className?: string
 }) => {
   const [mousePos, setMousePos] = useState({ x: -1000, y: -1000 });
-  
+
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
@@ -41,32 +43,22 @@ const GlassPanel = ({
   const clearClass = isLight ? 'bg-white/10 backdrop-blur-[2px]' : 'bg-white/[0.02] backdrop-blur-[2px] shadow-none';
 
   return (
-    <div 
+    <div
       onMouseMove={handleMouseMove}
       className={`relative overflow-hidden ${clearMode ? clearClass : frostClass} ${borderClass} border rounded-[2rem] transition-colors duration-700 shadow-2xl ${isLight ? 'shadow-black/5' : 'shadow-black/20'} ${className}`}
     >
-      <div 
+      <div
         className="pointer-events-none absolute inset-0 z-0 transition-opacity duration-500"
         style={{
           background: `radial-gradient(600px circle at ${mousePos.x}px ${mousePos.y}px, ${
             isLight ? 'rgba(255,255,255,0.8)' : isStormy ? 'rgba(56, 189, 248, 0.08)' : 'rgba(245, 158, 11, 0.08)'
-          }, transparent 40%)`
+            }, transparent 40%)`
         }}
       />
       <div className="relative z-10 h-full">{children}</div>
     </div>
   );
 };
-
-const MOCK_HISTORICAL_DATA = [
-  { time: '00:00', temp: 14, wind: 20 },
-  { time: '04:00', temp: 12, wind: 25 },
-  { time: '08:00', temp: 16, wind: 15 },
-  { time: '12:00', temp: 22, wind: 35 },
-  { time: '16:00', temp: 24, wind: 40 },
-  { time: '20:00', temp: 18, wind: 30 },
-  { time: '23:59', temp: 15, wind: 22 },
-];
 
 export default function Page() {
   const [backendMode, setBackendMode] = useState<'EDGE_BFF' | 'FASTAPI'>('EDGE_BFF');
@@ -75,6 +67,7 @@ export default function Page() {
   const [glassPhysics, setGlassPhysics] = useState<'FROSTED' | 'CLEAR'>('FROSTED');
   const [themeMode, setThemeMode] = useState<'DARK' | 'LIGHT'>('DARK');
   const [showDeepAtmosphere, setShowDeepAtmosphere] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
   const [isFabAnimating, setIsFabAnimating] = useState(true);
   const [isEditingLocation, setIsEditingLocation] = useState(false);
@@ -101,10 +94,10 @@ export default function Page() {
     isDay: true
   });
 
-  const [forecastData, setForecastData] = useState<any[]>(MOCK_HISTORICAL_DATA);
+  const [forecastData, setForecastData] = useState<any[]>([]);
 
-  const [usageData, setUsageData] = useState({ quotaUsed: 1204, quotaTotal: 5000 });
-  const [latency, setLatency] = useState(12);
+  const [usageData, setUsageData] = useState({ quotaUsed: 0, quotaTotal: 0 });
+  const [latency, setLatency] = useState(0);
 
   const addLog = (msg: string) => {
     setLogs(prev => [msg, ...prev].slice(0, 5));
@@ -113,6 +106,12 @@ export default function Page() {
   const fallbackHubs = ["Nairobi", "New York", "Tokyo", "London", "Paris"];
   const [isUsingFallback, setIsUsingFallback] = useState(false);
   const fallbackIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // =========================================================================
+  // DEVELOPMENT SIMULATOR: Uncomment the line below to hijack the telemetry feed 
+  // and preview all aesthetic condition states every 5 seconds.
+  // =========================================================================
+  // useWeatherSimulator(setWeatherData);
 
   const fetchData = async (targetLocation: string = weatherData.location) => {
     setIsRefreshing(true);
@@ -130,16 +129,16 @@ export default function Page() {
       const uData = await usageRes.json();
       const fData = await forecastRes.json();
       setWeatherData({
-         temperature: wData.temperature ?? 0,
-         condition: wData.condition || "Offline",
-         humidity: wData.humidity ?? 0,
-         windSpeed: wData.windSpeed ?? 0,
-         location: wData.location || targetLocation,
-         feelsLike: wData.feelsLike ?? 0,
-         uvIndex: wData.uvIndex ?? "None",
-         isDay: wData.isDay ?? true
+        temperature: wData.temperature ?? 0,
+        condition: wData.condition || "Offline",
+        humidity: wData.humidity ?? 0,
+        windSpeed: wData.windSpeed ?? 0,
+        location: wData.location || targetLocation,
+        feelsLike: wData.feelsLike ?? 0,
+        uvIndex: wData.uvIndex ?? "None",
+        isDay: wData.isDay ?? true
       });
-      setUsageData({ quotaUsed: uData.quotaUsed ?? 1204, quotaTotal: uData.quotaTotal ?? 5000 });
+      setUsageData({ quotaUsed: uData.quotaUsed ?? 0, quotaTotal: uData.quotaTotal ?? 0 });
       if (fData.days && fData.days.length > 0) {
         setForecastData(fData.days);
       }
@@ -171,7 +170,7 @@ export default function Page() {
     } catch (e) {
       console.error("Zero-click IP geo failed", e);
     }
-    
+
     // Fallback logic
     addLog(`[WARN] IP detection failed. Activating Atmospheric Fallback.`);
     setIsUsingFallback(true);
@@ -227,18 +226,19 @@ export default function Page() {
   const weatherTheme = getWeatherTheme(weatherData.condition);
   const isStormy = weatherTheme.isStormy;
   const isNight = !weatherData.isDay;
-  
+
   const accentColor = weatherTheme.accentColor;
+  const accentHex = weatherTheme.accentHex;
   const accentTextClass = weatherTheme.accentTextClass;
 
   const ToggleBtn = ({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) => (
-    <button 
+    <button
       onClick={onClick}
-      className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all duration-300 ${
+      className={`flex-1 px-4 py-1.5 rounded-full text-xs font-semibold transition-all duration-300 text-center ${
         active 
-          ? (isLight ? 'bg-white shadow-sm text-slate-900 border-white/60' : 'bg-white/20 text-white shadow-sm') 
-          : (isLight ? 'text-slate-500 hover:text-slate-700' : 'text-slate-400 hover:text-slate-200')
-      }`}
+          ? (isLight ? `bg-${accentColor}-100 text-${accentColor}-700 shadow-sm border border-${accentColor}-200` : `bg-${accentColor}-500/20 text-${accentColor}-300 shadow-sm border border-${accentColor}-500/30`)
+          : (isLight ? 'text-slate-500 hover:text-slate-700 hover:bg-white/50 border border-transparent' : 'text-slate-400 hover:text-slate-200 hover:bg-white/10 border border-transparent')
+        }`}
     >
       {label}
     </button>
@@ -247,68 +247,106 @@ export default function Page() {
   return (
     <div className={`min-h-screen font-sans selection:bg-${accentColor}-500/30 relative transition-colors duration-1000 ${
       isLight ? 'bg-slate-100 text-slate-900' : (isStormy ? 'bg-[#050b14] text-slate-100' : 'bg-[#0a0703] text-slate-100')
-    }`}>
+      }`}>
 
       {/* Massive Kinetic Background Atmosphere */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden flex items-center justify-center z-0">
-         <BackgroundWeatherGraphic condition={weatherData.condition} isClear={isClear} isLight={isLight} />
+        <BackgroundWeatherGraphic condition={weatherData.condition} isClear={isClear} isLight={isLight} />
       </div>
 
       <div className="max-w-[1600px] mx-auto px-4 sm:px-8 py-6 sm:py-10 relative z-10 flex flex-col min-h-screen">
-        
+
         {/* Premium Header Grid */}
-        <header className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-8 md:gap-0">
-          <div className="flex items-center gap-4">
+        <header className="flex flex-row items-start sm:items-center justify-between mb-8 gap-4 w-full">
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
             <div className="relative">
               <div className={`w-14 h-14 rounded-2xl flex items-center justify-center backdrop-blur-md transition-all duration-700 ${isLight ? 'bg-black/5' : 'bg-white/5 border-white/10 border'}`}>
                 <HeaderWeatherIcon condition={weatherData.condition} />
               </div>
             </div>
             <div>
-              <h1 className={`font-display text-lg md:text-2xl font-bold uppercase tracking-[0.1em] md:tracking-[0.15em] flex flex-wrap items-center gap-1 md:gap-2 ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>
+              <h1 className={`font-display text-base sm:text-lg md:text-2xl font-bold uppercase tracking-wider sm:tracking-[0.1em] md:tracking-[0.15em] flex flex-wrap items-center gap-1 md:gap-2 ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>
                 Zephyrus <span className={accentTextClass}>Command</span>
               </h1>
-              <p className={`font-mono text-[8px] md:text-[10px] uppercase tracking-[0.2em] md:tracking-[0.3em] mt-0.5 md:mt-1 ${isLight ? 'text-slate-500' : 'opacity-60'}`}>
+              <p className={`font-mono text-[7px] sm:text-[8px] md:text-[10px] uppercase tracking-widest md:tracking-[0.3em] mt-0.5 md:mt-1 ${isLight ? 'text-slate-500' : 'opacity-60'}`}>
                 Atmospheric Telemetry Node
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4 flex-wrap">
-             <div className={`flex rounded-full p-1 border ${isLight ? 'border-white/60 bg-white/40' : 'border-white/10 bg-white/5'} backdrop-blur-md shadow-sm`}>
-               <ToggleBtn active={themeMode === 'DARK'} onClick={() => setThemeMode('DARK')} label="Dark" />
-               <ToggleBtn active={themeMode === 'LIGHT'} onClick={() => setThemeMode('LIGHT')} label="Light" />
-             </div>
+          <div className="flex items-center gap-4 relative shrink-0">
+            <div className="relative">
+              <button
+                onClick={() => setShowSettings(prev => !prev)}
+                  className={`p-3 rounded-full border transition-all duration-500 focus:outline-none flex items-center justify-center ${
+                    glassPhysics === 'FROSTED'
+                    ? (isLight ? 'bg-white/30 backdrop-blur-md border-white/60 shadow-[0_8px_32px_rgba(0,0,0,0.05)] hover:bg-white/40' : (isStormy ? 'bg-slate-900/30 border-sky-400/20' : 'bg-[#181005]/40 border-amber-500/20') + ' backdrop-blur-md shadow-[0_8px_32px_rgba(0,0,0,0.2)] hover:bg-white/10')
+                    : (isLight ? 'bg-white/10 backdrop-blur-[2px] border-white/30 shadow-sm hover:bg-white/20' : 'bg-white/[0.02] backdrop-blur-[2px] border-white/10 shadow-none hover:bg-white/[0.05]')
+                  } ${showSettings ? (isLight ? `bg-${accentColor}-100 border-${accentColor}-300` : `bg-${accentColor}-500/20 border-${accentColor}-500/50`) : ''}`}
+              >
+                <Settings2 className={`w-5 h-5 transition-colors ${isLight ? `text-${accentColor}-600` : `text-${accentColor}-400`}`} />
+              </button>
+              <AnimatePresence>
+                {showSettings && (
+                  <motion.div
+                    key="settings-panel"
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
+                      className={`absolute right-0 top-full mt-4 p-5 rounded-[2rem] border flex flex-col gap-6 min-w-[280px] z-50 transition-all duration-500 ${
+                        glassPhysics === 'FROSTED'
+                        ? (isLight ? 'bg-white/30 backdrop-blur-md border-white/60 shadow-[0_16px_48px_rgba(0,0,0,0.1)]' : (isStormy ? 'bg-slate-900/30 border-sky-400/20' : 'bg-[#181005]/40 border-amber-500/20') + ' shadow-[0_16px_48px_rgba(0,0,0,0.6)] backdrop-blur-md')
+                        : (isLight ? 'bg-white/20 backdrop-blur-sm border-white/40 shadow-sm' : 'bg-[#0f0f11]/40 border-white/10 shadow-lg backdrop-blur-sm')
+                      }`}
+                  >
+                    <div>
+                      <span className={`text-[10px] font-mono uppercase tracking-widest block mb-3 font-semibold ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>Theme</span>
+                      <div className={`flex w-full rounded-full p-1 transition-colors ${isLight ? 'bg-black/5' : 'bg-black/40'}`}>
+                        <ToggleBtn active={themeMode === 'DARK'} onClick={() => setThemeMode('DARK')} label="Dark" />
+                        <ToggleBtn active={themeMode === 'LIGHT'} onClick={() => setThemeMode('LIGHT')} label="Light" />
+                      </div>
+                    </div>
 
-             <div className={`flex rounded-full p-1 border ${isLight ? 'border-white/60 bg-white/40' : 'border-white/10 bg-white/5'} backdrop-blur-md shadow-sm`}>
-               <ToggleBtn active={glassPhysics === 'FROSTED'} onClick={() => setGlassPhysics('FROSTED')} label="Frosted" />
-               <ToggleBtn active={glassPhysics === 'CLEAR'} onClick={() => setGlassPhysics('CLEAR')} label="Clear" />
-             </div>
+                    <div>
+                      <span className={`text-[10px] font-mono uppercase tracking-widest block mb-3 font-semibold ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>Glass Physics</span>
+                      <div className={`flex w-full rounded-full p-1 transition-colors ${isLight ? 'bg-black/5' : 'bg-black/40'}`}>
+                        <ToggleBtn active={glassPhysics === 'FROSTED'} onClick={() => setGlassPhysics('FROSTED')} label="Frosted" />
+                        <ToggleBtn active={glassPhysics === 'CLEAR'} onClick={() => setGlassPhysics('CLEAR')} label="Clear" />
+                      </div>
+                    </div>
 
-             <div className={`flex rounded-full p-1 border ${isLight ? 'border-white/60 bg-white/40' : 'border-white/10 bg-white/5'} backdrop-blur-md shadow-sm`}>
-               <ToggleBtn active={backendMode === 'EDGE_BFF'} onClick={() => setBackendMode('EDGE_BFF')} label="BFF Adapter" />
-               <ToggleBtn active={backendMode === 'FASTAPI'} onClick={() => setBackendMode('FASTAPI')} label="FastAPI" />
-             </div>
+                    <div>
+                      <span className={`text-[10px] font-mono uppercase tracking-widest block mb-3 font-semibold ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>Adapter Node</span>
+                      <div className={`flex w-full rounded-full p-1 transition-colors ${isLight ? 'bg-black/5' : 'bg-black/40'}`}>
+                        <ToggleBtn active={backendMode === 'EDGE_BFF'} onClick={() => setBackendMode('EDGE_BFF')} label="BFF Adapter" />
+                        <ToggleBtn active={backendMode === 'FASTAPI'} onClick={() => setBackendMode('FASTAPI')} label="FastAPI" />
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         </header>
 
         {/* Main Dashboard Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 flex-1 mt-4 lg:mt-0">
-          
+
           {/* Left Column - Core Metrics */}
           <div className="col-span-1 lg:col-span-8 flex flex-col gap-6 h-full">
-            
+
             {/* Hero Card */}
             <GlassPanel clearMode={isClear} isLight={isLight} isStormy={isStormy} className="col-span-1 flex-1 relative flex items-center">
               <div className="p-12 z-10 w-full flex justify-between items-center h-full">
                 <div className="flex flex-col h-full justify-between w-full">
-                  
+
                   {/* Location & Refresh */}
                   <div className="flex items-center gap-3">
                     <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-${accentColor}-500/30 font-mono text-[10px] uppercase tracking-widest ${isLight ? 'bg-black/5 text-slate-800' : 'bg-white/5 text-slate-200'}`}>
                       <span className={`w-1.5 h-1.5 rounded-full ${connectionStatus === 'STABLE' ? `bg-${accentColor}-400 animate-pulse` : connectionStatus === 'SYNCING' ? 'bg-orange-400' : 'bg-red-500'}`} />
                       {isEditingLocation ? (
-                        <input 
+                        <input
                           autoFocus
                           value={locationInput}
                           onChange={(e) => setLocationInput(e.target.value)}
@@ -318,7 +356,7 @@ export default function Page() {
                           placeholder="ENTER CITY..."
                         />
                       ) : (
-                        <span 
+                        <span
                           onClick={() => { setLocationInput(weatherData.location); setIsEditingLocation(true); }}
                           className="cursor-pointer hover:opacity-70 transition-opacity"
                         >
@@ -326,7 +364,7 @@ export default function Page() {
                         </span>
                       )}
                     </div>
-                    <button 
+                    <button
                       onClick={handleManualRefresh}
                       disabled={isRefreshing}
                       className={`p-1.5 rounded-full transition-all duration-300 ${isLight ? 'hover:bg-black/5' : 'hover:bg-white/10'}`}
@@ -342,7 +380,7 @@ export default function Page() {
                         {weatherData.temperature}
                       </span>
                       <div className="flex items-center justify-center w-8 h-8 lg:w-16 lg:h-16 mt-2 lg:mt-4 ml-2">
-                        <motion.span 
+                        <motion.span
                           animate={{ rotate: 360 }}
                           transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
                           className={`text-5xl lg:text-6xl ${accentTextClass} leading-none block transform-gpu origin-center`}
@@ -357,7 +395,7 @@ export default function Page() {
                   </div>
                 </div>
               </div>
-              
+
               {/* Massive Clipped Icon on Right Edge */}
               <ClippedWeatherIcon condition={weatherData.condition} isLight={isLight} />
             </GlassPanel>
@@ -397,15 +435,15 @@ export default function Page() {
                   <div className={`w-2 h-2 rounded-full bg-${accentColor}-400 animate-pulse`} />
                 </div>
               </div>
-              
+
               <div className="space-y-8 flex-1 flex flex-col">
-                
+
                 {/* Live SSE Ping Log (Trickling Feed) */}
                 <div className={`flex-1 rounded-[1.5rem] overflow-hidden flex flex-col font-mono text-[10px] tracking-wider leading-relaxed border shadow-inner min-h-[160px] max-h-[220px] relative ${isLight ? 'bg-white/60 border-white/60 text-slate-700' : 'bg-black/20 border-white/5 text-slate-400'}`}>
                   <div className="absolute inset-x-5 bottom-5 flex flex-col justify-end pointer-events-none">
                     <AnimatePresence>
                       {logs.map((log, i) => (
-                        <motion.div 
+                        <motion.div
                           key={`${log}-${i}`}
                           layout
                           initial={{ opacity: 0, x: -10, height: 0 }}
@@ -422,7 +460,7 @@ export default function Page() {
                 </div>
 
                 <div>
-                   <div className="flex justify-between items-center mb-3">
+                  <div className="flex justify-between items-center mb-3">
                     <span className="font-mono text-[10px] text-slate-500 tracking-widest uppercase">Gateway Quota (/v1/usage)</span>
                     <span className={`font-mono text-xs font-bold ${accentTextClass}`}>{usageData.quotaUsed} / {usageData.quotaTotal}</span>
                   </div>
@@ -461,7 +499,7 @@ export default function Page() {
           glassPhysics === 'FROSTED'
             ? (isLight ? 'bg-white/30 backdrop-blur-md border-white/60 text-slate-800 shadow-[0_8px_32px_rgba(0,0,0,0.05)]' : 'bg-slate-900/40 backdrop-blur-md border-white/10 text-slate-200 shadow-[0_8px_32px_rgba(0,0,0,0.2)]')
             : (isLight ? 'bg-white/10 backdrop-blur-[2px] border-white/30 text-slate-800 shadow-sm' : 'bg-slate-950/20 backdrop-blur-[2px] border-white/20 text-slate-200 shadow-md')
-        }`}
+          }`}
       >
         <div className="flex items-end justify-center gap-[3px] h-5 w-5">
           <motion.div animate={isFabAnimating ? { height: ['30%', '100%', '30%', '100%', '30%'] } : { height: '30%' }} transition={{ duration: 1.5, ease: "easeInOut" }} className={`w-1 rounded-sm bg-${accentColor}-400`} />
@@ -474,7 +512,7 @@ export default function Page() {
       {/* Deep Atmosphere Modal */}
       <AnimatePresence>
         {showDeepAtmosphere && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, backdropFilter: 'blur(0px)' }}
             animate={{ opacity: 1, backdropFilter: 'blur(20px)' }}
             exit={{ opacity: 0, backdropFilter: 'blur(0px)' }}
@@ -505,28 +543,28 @@ export default function Page() {
                 <div className="p-4 sm:p-10 flex-1 min-h-[300px] h-full flex flex-col relative w-full">
                   <div className="absolute inset-4 sm:inset-10 flex justify-center items-center">
                     <ResponsiveContainer width="100%" height="100%">
-                       <AreaChart data={forecastData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                         <defs>
-                           <linearGradient id="colorTempModal" x1="0" y1="0" x2="0" y2="1">
-                             <stop offset="5%" stopColor={isStormy ? '#38bdf8' : '#f59e0b'} stopOpacity={0.4}/>
-                             <stop offset="95%" stopColor={isStormy ? '#38bdf8' : '#f59e0b'} stopOpacity={0}/>
-                           </linearGradient>
-                         </defs>
+                      <AreaChart data={forecastData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="colorTempModal" x1="0" y1="0" x2="0" y2="1">
+                             <stop offset="5%" stopColor={accentHex} stopOpacity={0.4}/>
+                             <stop offset="95%" stopColor={accentHex} stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
                          <XAxis dataKey="time" stroke={isLight ? '#94a3b8' : '#475569'} tick={{fill: isLight ? '#64748b' : '#94a3b8', fontSize: 12, fontFamily: 'monospace'}} />
                          <YAxis stroke={isLight ? '#94a3b8' : '#475569'} tick={{fill: isLight ? '#64748b' : '#94a3b8', fontSize: 12, fontFamily: 'monospace'}} />
-                         <CartesianGrid strokeDasharray="3 3" stroke={isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)'} vertical={false} />
-                         <Tooltip 
-                           contentStyle={{
-                             background: isLight ? 'rgba(255,255,255,0.9)' : 'rgba(15,23,42,0.9)', 
-                             border: `1px solid ${isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)'}`,
-                             borderRadius: '16px', backdropFilter: 'blur(10px)', color: isLight ? '#0f172a' : '#f1f5f9',
-                             fontFamily: 'monospace', fontSize: '13px'
-                           }}
-                           cursor={{ stroke: isStormy ? 'rgba(56,189,248,0.2)' : 'rgba(245,158,11,0.2)', strokeWidth: 2 }}
-                         />
-                         <Area type="monotone" dataKey="temp" stroke={isStormy ? '#38bdf8' : '#f59e0b'} strokeWidth={4} fillOpacity={1} fill="url(#colorTempModal)" />
-                       </AreaChart>
-                     </ResponsiveContainer>
+                        <CartesianGrid strokeDasharray="3 3" stroke={isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)'} vertical={false} />
+                        <Tooltip
+                          contentStyle={{
+                            background: isLight ? 'rgba(255,255,255,0.9)' : 'rgba(15,23,42,0.9)',
+                            border: `1px solid ${isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)'}`,
+                            borderRadius: '16px', backdropFilter: 'blur(10px)', color: isLight ? '#0f172a' : '#f1f5f9',
+                            fontFamily: 'monospace', fontSize: '13px'
+                          }}
+                          cursor={{ stroke: accentHex, strokeOpacity: 0.2, strokeWidth: 2 }}
+                        />
+                        <Area type="monotone" dataKey="temp" stroke={accentHex} strokeWidth={4} fillOpacity={1} fill="url(#colorTempModal)" />
+                      </AreaChart>
+                    </ResponsiveContainer>
                   </div>
                 </div>
               </GlassPanel>

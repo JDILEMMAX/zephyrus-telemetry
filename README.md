@@ -1,6 +1,6 @@
 # Zephyrus Atmospheric Command Center
 
-Zephyrus is a high-performance, enterprise-grade weather telemetry engine. It is engineered from first principles to consume, cache, and broadcast atmospheric data via an ultra-premium, dynamic glassmorphism command center.
+Zephyrus is a high-performance, enterprise-grade weather telemetry engine powered by the [WeatherAI](https://weather-ai.co/) global data infrastructure. It is engineered from first principles to securely consume, cache and broadcast real-time atmospheric data via an ultra-premium, dynamic glassmorphism command center.
 
 ## Architecture
 The system is bifurcated into a robust Next.js Backend-For-Frontend (BFF) and a decoupled Python FastAPI microservice. The entire data consumption layer is orchestrated via the **Universal Port** (Adapter Pattern), allowing the UI to hot-swap backend nodes instantly.
@@ -86,7 +86,7 @@ flowchart LR
 ## Core Capabilities
 * **Universal Port Toggling**: Instantly hot-swap the data consumption layer between a Vercel-optimized Next.js Edge and a Python FastAPI node.
 * **Aggressive TTLCaching**: Protects proprietary API quotas via Time-To-Live deduplication, ensuring that 10,000 concurrent user requests result in exactly 1 external network execution.
-* **Live Telemetry & Diagnostics**: Real-time connections track dynamic API rate limits, edge cache hits, and proprietary gateway quota health.
+* **Live Telemetry & Diagnostics**: Real-time connections track dynamic API rate limits, edge cache hits and proprietary gateway quota health.
 * **Dynamic Atmospheric Aesthetics**: Frosty blue glassmorphism utilizing `framer-motion`. Features massive kinetic background vectors (e.g., swaying tornado lines, crescent moon orbits) that programmatically react to live day/night API flags and active weather payloads.
 
 ## Data Acquisition Protocols
